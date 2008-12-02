@@ -18,6 +18,5 @@ The compression algorithm is identified by *bilbo*:
   I've managed to identify their decompression (not decryption) algorithm .... It is simply ZLIB, release 1.1.3 (rather old...). The routines are inside BabyServices.DLL, but they are called from BContentServer.DLL.
 
 
-The gzip header of 0x12340001 files starts at 0x47.
+The gzip header of 0x12340001 files starts at 0x47.<br/>
 The gzip header of 0x12340002 files starts at 0x69.
-
