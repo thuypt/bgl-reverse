@@ -1,7 +1,4 @@
 import codecs
-"""
-a BLOCK is an int8/int16 value A followed by data with length of A;
-"""
 
 RC_META=0 # meta ???
 RC_INFO=3 # info
