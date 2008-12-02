@@ -2,14 +2,15 @@ import codecs
 
 RC_META=0 # meta ???
 RC_INFO=3 # info
-RC_NULL=6  # end of dict meta and info, entries and resources will follow
+RC_NULL_1=6  # end of dict meta and info, entries and resources will follow
 
 RC_ENTRY_1=0x1
 RC_ENTRY_A=0xA
 RC_ENTRY_B=0xB
 
 RC_RES=2
-RC_EOF=4
+RC_NULL_2=4
+RC_EOF=5
 
 
 WordClass = {
@@ -197,6 +198,17 @@ def parseInt(data):
         value=value+byte
     return value
 
+def readRecord(f):
+    hdr=f.read(1)[0]
+    high_nibble=hdr>>4
+    rec_type=hdr&0x0F
+    
+    if high_nibble>=4:
+        rec_len=high_nibble-4
+    else:
+        rec_len=parseInt(f.read(high_nibble+1))
+    return (rec_type,f.read(rec_len))
+
 def parseBlock_A(data,size):
     blk_len=parseInt(data[0:size])
     return (data[size:size+blk_len],data[size+blk_len:])
@@ -292,19 +304,10 @@ class Record:
     def read(self):
         if self.eof:
             return (None,None)
-        f=self.file
-        hdr=f.read(1)[0]
-        high_nibble=hdr>>4
-        rec_type=hdr&0xF
-        if rec_type==RC_EOF:
-            self.eof=True
-            return (rec_type,None)
-        
-        if high_nibble>=4:
-            rec_len=high_nibble-4
-        else:
-            rec_len=parseInt(f.read(high_nibble+1))
-        return (rec_type,f.read(rec_len))
+        rec=readRecord(self.file)
+        if rec[0]==RC_EOF:
+            self.eof
+        return rec
 
 class BGL(Record):
     
