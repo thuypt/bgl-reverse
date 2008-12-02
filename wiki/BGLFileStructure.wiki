@@ -20,3 +20,23 @@ The compression algorithm is identified by *bilbo*:
 
 The gzip header of 0x12340001 files starts at 0x47.<br/>
 The gzip header of 0x12340002 files starts at 0x69.
+
+==Decompressed BGL (*BGR*)==
+
+Give the decompressed file an extension bgr and it is denoted as bgr file from now on.
+
+Again by *bilbo*:
+  The uncompressed file is a collection of records.<br/>
+  The low nibble is the record type.<br/>
+  The high nibble holds indication of the record length, with the following rule:<br/>
+    high nibble>=4: subtract 4; that is the length<br/>
+    high nibble <4: add 1: that is the number of bytes for the following length (in big-endian format)<br/>
+
+Currently I know four types of records:
+||*Record Type* ||Value ||
+||RC_META       || 0x0  ||
+||RC_INFO       || 0x3  ||
+||RC_NULL       || 0x6  ||
+||RC_ENTRY      || 0x1 | 0xA | 0xB ...||
+||RC_RES        || 0x2  ||
+||RC_EOF        || 0x4  ||
