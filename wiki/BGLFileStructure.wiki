@@ -27,16 +27,51 @@ Give the decompressed file an extension bgr and it is denoted as bgr file from n
 
 Again by *bilbo*:
   The uncompressed file is a collection of records.<br/>
+Every record has 1 byte specifier<br/>
   The low nibble is the record type.<br/>
   The high nibble holds indication of the record length, with the following rule:<br/>
     high nibble>=4: subtract 4; that is the length<br/>
     high nibble <4: add 1: that is the number of bytes for the following length (in big-endian format)<br/>
 
-Currently I know four types of records:
+So a simple function can do the job:
+{{{
+# python 3.0 compatible
+def readBlock(f):
+    hdr=f.read(1)[0]
+    high_nibble=hdr>>4
+    rec_type=hdr&0xF
+    if rec_type==RC_EOF:
+        return (rec_type,None)
+    
+    if high_nibble>=4:
+        rec_len=high_nibble-4
+    else:
+        rec_len=parseInt(f.read(high_nibble+1))
+    return (rec_type,f.read(rec_len))
+}}}
+
+Currently we know four types of records:
 ||*Record Type* ||*Value*||
 ||RC_META       || 0x0   ||
 ||RC_INFO       || 0x3   ||
-||RC_NULL       || 0x6   ||
+||RC_NULL_1       || 0x6   ||
 ||RC_ENTRY      || 0x1 | 0xA | 0xB ...||
 ||RC_RES        || 0x2   ||
-||RC_EOF        || 0x4   ||
+||RC_NULL_2     || 0x4   ||
+||RC_EOF        || 0x5   ||
+
+A bgr file begins with RC_META records followed by RC_INFOs. RC_NULL_1 indicates the end of RC_INFOs and beginning of RC_ENTRYs. RC_RESs follow RC_ENTRYs. The file ends with a RC_NULL_2 and RC_EOF record.<br/>
+
+==Record Structures==
+
+===RC_META===
+1 byte of specifier and data next
+
+===RC_INFO===
+2 bytes of specifier and data next
+
+===RC_NULL_1===
+0 bytes of data
+
+===RC_ENTRY===
+see [BGLEntryStructure]
