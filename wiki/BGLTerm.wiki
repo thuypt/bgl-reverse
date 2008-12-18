@@ -1,4 +1,4 @@
-#summary GLS Term Structure
+#summary BGL Term Structure
 = Introduction =
 
 Add your content here.
