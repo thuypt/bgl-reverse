@@ -64,18 +64,4 @@ Currently I know 4 types of records:
 ||RC_TERM           || 0x1 | 0xA | 0xB ...||
 ||RC_RES            || 0x2   ||
 
-A bgr file begins with RC_META records followed by RC_INFOs. RC_NULL_1 indicates the end of RC_INFOs and beginning of RC_ENTRYs. RC_RESs follow RC_ENTRYs. The file ends with a RC_NULL_2 and RC_EOF record.<br/>
-
-==Record Types==
-
-===RC_META===
-1 byte of specifier and data next
-
-===RC_INFO===
-2 bytes of specifier and data next
-
-===RC_NULL_1===
-0 bytes of data
-
-===RC_ENTRY===
-see [BGLEntryStructure]
+RC_GLSPARAM records come always first usually followed by RC_GLSPROPERTY records. A BGLR file always ends with some empty records (i.e. 0 record length)
