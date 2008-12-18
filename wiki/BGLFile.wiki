@@ -62,9 +62,9 @@ def readRecord(fbglr):
 
 Currently I know 4 types of records:
 ||*Record Type*     ||*Value*||
-||[Articles RC_GLSPARAM BGLParameter]   || 0x0   ||
-||[Articles RC_GLSPROPERTY BGLProperty]   || 0x3   ||
-||[Articles RC_TERM BGLTerm]          || 0x1 | 0xA | 0xB ...||
-||[Articles RC_RES BGLResource]            || 0x2   ||
+||[BGLParameter RC_GLSPARAM]   || 0x0   ||
+||[BGLProperty RC_GLSPROPERTY]   || 0x3   ||
+||[BGLTerm RC_TERM]          || 0x1 | 0xA | 0xB ...||
+||[BGLResource RC_RES]            || 0x2   ||
 
 RC_GLSPARAM records come always first usually followed by RC_GLSPROPERTY records. A BGLR file always ends with some empty records (i.e. 0 record length)
