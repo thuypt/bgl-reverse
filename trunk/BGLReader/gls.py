@@ -1,18 +1,17 @@
-
-RC_META=0 # meta, may contain format identification information
-RC_INFO=3 # info
-RC_NULL_1=6  # end of dict meta and info, entries and resources will follow
-
-# entry, no regulation was found in entry type value
-RC_ENTRY_1=0x1
-RC_ENTRY_A=0xA
-RC_ENTRY_B=0xB
-
+# glossary file parameter, may contain format identification information, at the beginning of a BGR
+RC_PARAM=0
+# glossary property
+RC_PROP=3
+# term
+RC_TERM1=0x1
+RC_TERMA=0xA
+RC_TERMB=0xB
+# resource
 RC_RES=2
 
-RC_NULL_2=4
-RC_EOF=5
+# no data
 
+RC_NULLS=set([0x6,0x4,0x5])
 
 LEXICAL_CLASS = {
     0x30:'n.',
@@ -157,9 +156,9 @@ LANGUAGE = (
     "Armenian"
     )
 
-INFO_SPEC={
-    0x01:"Glossary Name",
-    0x02:"Author",
+GLS_PROP={
+    0x01:"Title",
+    0x02:"Author Name",
     0x03:"Author Email",
     0x04:"Copyright",
     0x07:"Source Language",
@@ -167,11 +166,13 @@ INFO_SPEC={
     0x09:"Description",
     0x0B:"Icon",
     0x0C:"Entry Count",
-    0x1A:"Source Encoding",
-    0x1B:"Target Encoding",
+    0x1A:"Source Charset",
+    0x1B:"Target Charset",
     0x27:"Word Class Name", # localized word class name
+    0x33:"Create Time",
+    0x1C:"Update Time",
     0x3B:"Morphological Derivation Type", # localized names of word variation type
-    0x41:"Manuel"
+    0x41:"Glossary Manual"
     }
 
 CHARSET = {
@@ -190,3 +191,23 @@ CHARSET = {
     0x4D: "CP1256",     #Arabic
     0x4E: "CP874"       #Thai
     }
+
+TERM_PROP_NAME={
+    0x18: "Display Name",
+    
+    }
+
+def getTermPropName(spec):
+    pass
+
+class Term:
+    def __init__(self,title,alt=[],prop={},defin=[]):
+        self.title=title
+        self.alt=alt
+        self.prop=prop
+        self.defin=defin
+
+class Resource:
+    def __init__(self,title,data):
+        self.title=title
+        self.data=data
