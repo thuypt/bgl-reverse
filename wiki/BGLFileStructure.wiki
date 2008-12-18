@@ -42,7 +42,10 @@ So a simple function can read records from a BGLR file:
 # python 3.0 compatible
 
 def readRecord(fbglr):
-    hdr=fbglr.read(1)[0]
+    hdr=fbglr.read(1)
+    if len(hdr)==0:
+        return
+    hdr=hdr[0]
     high_nibble=hdr>>4
     rec_type=hdr&0xF
     if rec_type==RC_EOF:
