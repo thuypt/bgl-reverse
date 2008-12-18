@@ -1,6 +1,6 @@
 #summary BGL File Structure
 #sidebar TOC
-* [DOMReference HOWTO articles]
+* [HTMLElements HTML reference]
 
 = Introduction =
 
