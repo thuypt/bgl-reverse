@@ -3,7 +3,7 @@
 
 = Introduction =
 
-This wiki gives a quick analysis for BGL file structure. 
+This wiki gives a quick analysis of BGL file structure. 
 
 = Details =
 
