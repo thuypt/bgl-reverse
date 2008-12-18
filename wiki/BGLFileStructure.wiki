@@ -1,6 +1,5 @@
 #summary BGL File Structure
 #sidebar TOC
-* [HTMLElements HTML reference]
 
 = Introduction =
 
@@ -35,39 +34,39 @@ Every record has 1 byte specifier:
   * The high nibble holds indication of the record length, with the following rule:
     # high nibble>=4: subtract 4; that is the length
     # high nibble <4: add 1: that is the number of bytes for the following length (in big-endian format)
-    _similar structure is used in term property_
+      _similar structure is used in term property_
     
 
-So a simple function can do the job:
+So a simple function can read records from a BGLR file:
 {{{
 # python 3.0 compatible
-def readBlock(f):
-    hdr=f.read(1)[0]
+
+def readRecord(fbglr):
+    hdr=fbglr.read(1)[0]
     high_nibble=hdr>>4
     rec_type=hdr&0xF
     if rec_type==RC_EOF:
         return (rec_type,None)
-    
     if high_nibble>=4:
         rec_len=high_nibble-4
     else:
-        rec_len=parseInt(f.read(high_nibble+1))
-    return (rec_type,f.read(rec_len))
+        rec_len=parseInt(fbglr.read(high_nibble+1))
+    return (rec_type,fbglr.read(rec_len))
 }}}
 
-Currently we know four types of records:
-||*Record Type* ||*Value*||
-||RC_META       || 0x0   ||
-||RC_INFO       || 0x3   ||
-||RC_NULL_1       || 0x6   ||
-||RC_ENTRY      || 0x1 | 0xA | 0xB ...||
-||RC_RES        || 0x2   ||
-||RC_NULL_2     || 0x4   ||
-||RC_EOF        || 0x5   ||
+
+== Record Structure ==
+
+Currently I know 4 types of records:
+||*Record Type*     ||*Value*||
+||RC_GLSPARAM       || 0x0   ||
+||RC_GLSPROPERTY    || 0x3   ||
+||RC_TERM           || 0x1 | 0xA | 0xB ...||
+||RC_RES            || 0x2   ||
 
 A bgr file begins with RC_META records followed by RC_INFOs. RC_NULL_1 indicates the end of RC_INFOs and beginning of RC_ENTRYs. RC_RESs follow RC_ENTRYs. The file ends with a RC_NULL_2 and RC_EOF record.<br/>
 
-==Record Structures==
+==Record Types==
 
 ===RC_META===
 1 byte of specifier and data next
