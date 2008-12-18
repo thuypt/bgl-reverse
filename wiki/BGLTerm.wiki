@@ -1,4 +1,4 @@
-#summary BGL Term Structure
+#summary RC_BGLTERM records structure
 = Introduction =
 
 Add your content here.
