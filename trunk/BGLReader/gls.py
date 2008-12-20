@@ -1,17 +1,19 @@
 # glossary file parameter, may contain format identification information, at the beginning of a BGR
-RC_PARAM=0
+RC_GLSPARAM=0
 # glossary property
-RC_PROP=3
+RC_GLSPROP=3
 # term
-RC_TERM1=0x1
-RC_TERMA=0xA
-RC_TERMB=0xB
+RC_GLSTERM1=0x1
+RC_GLSTERMA=0xA
+RC_GLSTERMB=0xB
 # resource
-RC_RES=2
+RC_GLSRES=2
 
-# no data
-
-RC_NULLS=set([0x6,0x4,0x5])
+FORMATSPEC={
+    RC_GLSTERM1:[1,2],
+    RC_GLSTERMA:[1,2],
+    RC_GLSTERMB:[2,2]
+    }
 
 LEXICAL_CLASS = {
     0x30:'n.',
@@ -156,7 +158,7 @@ LANGUAGE = (
     "Armenian"
     )
 
-GLS_PROP={
+GLS_PROP_NAME={
     0x01:"Title",
     0x02:"Author Name",
     0x03:"Author Email",
@@ -169,20 +171,20 @@ GLS_PROP={
     0x1A:"Source Charset",
     0x1B:"Target Charset",
     0x27:"Word Class Name", # localized word class name
-    0x33:"Create Time",
-    0x1C:"Update Time",
+    0x33:"Creation Date",
+    0x1C:"Last Updated",
     0x3B:"Morphological Derivation Type", # localized names of word variation type
     0x41:"Glossary Manual"
     }
 
 CHARSET = {
-    0x41: "ISO-8859-1", #Default
+    0x41: "latin1", #Default
     0x42: "ISO-8859-1", #Latin
     0x43: "ISO-8859-2", #Eastern European
     0x44: "ISO-8859-5", #Cyriilic
     0x45: "ISO-8859-14",#Japanese
-    0x46: "BIG5",       #Traditional Chinese
-    0x47: "GB2312",     #Simplified Chinese
+    0x46: "big5",        #Traditional Chinese
+    0x47: "gbk",        #Simplified Chinese
     0x48: "CP1257",     #Baltic
     0x49: "CP1253",     #Greek
     0x4A: "ISO-8859-15",#Korean
@@ -196,18 +198,12 @@ TERM_PROP_NAME={
     0x18: "Display Name",
     
     }
-
-def getTermPropName(spec):
-    pass
-
-class Term:
-    def __init__(self,title,alt=[],prop={},defin=[]):
+    
+class GlsTerm:
+    def __init__(self,title,definition,prop,tail):
         self.title=title
-        self.alt=alt
-        self.prop=prop
-        self.defin=defin
+        self.definition=definition
+        self.property=prop
+        self.tail=tail
 
-class Resource:
-    def __init__(self,title,data):
-        self.title=title
-        self.data=data
+

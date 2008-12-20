@@ -27,3 +27,14 @@ def replaceCharsetTag(oldstr):
         lastpos=m.end()
     newstr+=oldstr[lastpos:]
     return newstr
+
+def decode(data,charset,default='latin'):
+    ret=''
+    while len(data)>0:
+        try:
+            ret+=data.decode(charset)
+            break
+        except UnicodeDecodeError as e:
+            ret+=data[e.start:e.end].decode(default)
+            data=data[e.end:]
+    return ret

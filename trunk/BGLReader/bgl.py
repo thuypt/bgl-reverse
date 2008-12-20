@@ -1,5 +1,4 @@
 import io
-import os
 import gzip
 from util import *
 import gls
@@ -15,15 +14,25 @@ class BGL(gzip.GzipFile):
         else:
             raise IOError("not a bgl file: {0:#x}".format(spec))
         gzip.GzipFile.__init__(self,fileobj=fo)
+        self.param={}
+        self.property={}
         return
-
+    
     def moveForward(self):
-        self.current=self.readRecord()
-        if self.current!=None:
-            return  True
-        else:
-            return False
-        
+        while True:
+            self.current=self.readRecord()
+            if self.current==None:
+                return False
+            elif self.current[0]==0:
+                if len(self.current[1])>0:
+                    (k,v)=parseGLSParam(self.current[1])
+                    self.param[k]=v
+            elif self.current[0]==3:
+                if len(self.current[1])>0:
+                    (k,v)=parseGLSProperty(self.current[1])
+                    self.property[k]=v
+            else:
+                return True
 
     def readRecord(self):
         """read a record from a bgr file, return (rec_type,data), None if eof"""
@@ -41,132 +50,73 @@ class BGL(gzip.GzipFile):
         else:
             rec_len=parseInt(self.read(high_nibble+1))
         return (rec_type,self.read(rec_len))
-
-    def export(self, f):
-        pass
     
     def parseAsResource(self):
-        resdata=parseBlkA(self.current,1)
-        return Resource(resdata[0],resdata[1])
+        resdata=parseBlock(self.current,1)
+        return gls.Resource(resdata[0],resdata[1])
 
     def parseAsTerm(self):
         data=self.current[1]
-        (title,data)=parseBlkA(data,1)
-        (termbody,data)=parseBlkA(data,2)
+        (title,data)=parseBlock(data,gls.FORMATSPEC[self.current[0]][0])
+        (termbody,data)=parseBlock(data,gls.FORMATSPEC[self.current[0]][1])
         if len(data)>0:
-            termtail=parseBlkA(data,1)[0]
+            termtail=parseBlock(data,1)[0]
         else:
             termtail=b''
-        
-        (definition,*data)=termbody.split(b'\x14',1)
+        title=title.decode(gls.CHARSET[self.property[0x1A]])
+        (definition,*data)=termbody.split(b'\x14',1)        
         if len(data)>0:
             termprop=data[0]
         else:
             termprop=b''
-        return GlsTerm(title,definition,parseTermProperty(termprop),termtail)
-
-class GlsTerm:
-    def __init__(self,title,definition,prop,tail):
-        self.title=title
-        self.definition=definition
-        self.property=prop
-        
-        self.tail=tail
-        
-        
+        return gls.GlsTerm(
+            title,
+            replaceCharsetTag(decode(definition,gls.CHARSET[self.property[0x1B]])),
+            parseTermProperty(termprop,gls.CHARSET[self.property[0x1A]]),termtail)       
 
 
-def parseBlkA(data,n):
-    "parse a Block_A: n bytes of length indicator and data next, returns (parsed, unparsed)"
+def parseBlock(data,n):
+    "parse a Block: n bytes of length indicator and data next, returns (parsed, unparsed)"
     blk_len=parseInt(data[0:n])
     return (data[n:n+blk_len],data[n+blk_len:])
 
-def parseBlkB(data,size):
-    """parse a Block_B: 1 byte specifier and data next,returns (spec,parsed,unparsed)"""
-    return (data[0],data[1:size+1],data[size+1:])
-
-def parseTranscription(data):
-    """data should be a Block_A"""
-    parseInt(data[0:2])
-
-def parseTermProperty(rawprop):
+def parseTermProperty(rawprop,charset):
     """return a dict"""
     prop={}
     while len(rawprop)>1:
         spec=rawprop[0]
         if spec<0x10:
-            prop[spec]=rawprop[1]
+            prop[spec&0x0F]=rawprop[1]
             rawprop=rawprop[2:]
-        elif spec==0x18:
-            (prop[spec],rawprop)=parseBlkA(rawprop[1:],1)
+        elif spec<0x40:            
+            (prop[spec&0x0F],rawprop)=parseBlock(rawprop[1:],(spec>>4))
         elif (spec&0xF0)==0x40:
             newspec=rawprop[1]
-            prop[0x4000+newspec]=rawprop[2:(spec&0x0F)+1+2]
+            prop[newspec]=rawprop[2:(spec&0x0F)+1+2]
             rawprop=rawprop[(spec&0x0F)+1+2:]
         elif spec>=0x50:
             newspec=rawprop[1]
-            (prop[0x4000+newspec],rawprop)=parseBlkA(rawprop[2:],(spec>>4)-4)
+            (prop[newspec],rawprop)=parseBlock(rawprop[2:],(spec>>4)-4)
         else:
             raise Exception([rawprop,prop,spec])
+    if 0x1b in prop.keys():
+        prop[0x1b]=replaceCharsetTag(prop[0x1b].decode(charset)) #transcription
+    if 0x08 in prop.keys():
+        prop[0x08]=replaceCharsetTag(prop[0x08].decode(charset)) #display name
     return prop
 
-def parseGLSProp(data):
-    return (parseInt(data[0:2]),data[2:])
+def parseGLSProperty(data,charset="latin"):
+    k=parseInt(data[0:2])
+    v=data[2:]
+    if k in set([0x01,0x02,0x03,0x04,0x09]):
+        return (k,v.decode(charset))
+    elif k in set([0x07,0x08,0x0C,0x1A,0x1B,0x33,0x1C]):
+        return (k,parseInt(v))
+    else:
+        return (k,v)
 
 def parseGLSParam(data):
     return (parseInt(data[0:1]),data[1:])
 
-class BGR(BGL):
-    """a base class that is capable of reading records"""
-    def __init__(self,path):
-        """create a BGR reader"""
-        BGL.__init__(self,path)
-        return
-
-    def readTerm(self):
-        pass
-
-    def readParam(self):
-        pass
-
-    def readProp(self):
-        pass
-
-    def readnparse(self):
-        rec=self.read()
-        if rec==None:
-            return
-        if rec[0]==RC_ENTRY_1:
-            ent=parseEntry(rec[1])
-            phon=ent[2].get(0x1B)
-            if phon!=None:
-                ent[2][0x1B]=replaceCharsetTag(replaceHTMLEntity(phone),"ISO-8859-1")
-            return (
-                replaceCharsetTag(ent[0],self.info["Source Encoding"]),
-                replaceCharsetTag(ent[1],self.info["Target Encoding"]),
-                ent[2],
-                replaceCharsetTag(ent[3],self.info["Source Encoding"]))
-            return ent
-        
-        if rec[0]==RC_RES:
-            return parseResource(rec[1])
-        return rec
-
-    def parseInfo(self):
-        rawparam=self.rawparam
-        rawprop=self.rawprop
-        info={}
-        info["Default Encoding"]=CHARSET[parseInt(rawmeta[0x08])]
-        info["Glossary Name"]=rawinfo[0x01].decode(info["Default Encoding"])
-        info["Author"]=rawinfo[0x02].decode(info["Default Encoding"])
-        info["Author Email"]=rawinfo.get(0x03,b'').decode(info["Default Encoding"])
-        info["Copyright"]=rawinfo[0x04].decode(info["Default Encoding"])
-        info["Source Language"]=LANGUAGE[parseInt(rawinfo[0x07])]
-        info["Target Language"]=LANGUAGE[parseInt(rawinfo[0x08])]
-        info["Description"]=rawinfo[0x09].decode(info["Default Encoding"])
-        info["Entry Count"]=parseInt(rawinfo[0x0C])
-        info["Source Encoding"]=CHARSET[parseInt(rawinfo[0x1A])]
-        info["Target Encoding"]=CHARSET[parseInt(rawinfo[0x1B])]
-        return info
 
 
