@@ -1,6 +1,13 @@
 #summary RC_BGLTERM records structure
-<a href="#TermStructureOverview">Term Structure Overview</a>
-
+#sidebar TOC
+ * [Articles HOWTO articles]
+    * [ArticlesXSS Web security]
+    * [ArticlesDom DOM manipulation]
+    * [ArticlesStyle CSS and style]
+    * [ArticlesTips Tips and tricks]
+  * [DOMReference DOM reference]
+  * [HTMLElements HTML reference]
+  * [CSSReference CSS reference]
 = Introduction =
 
 A Term record in BGLR file has a record type of either 0x01, 0x0A or 0x0B. Type 0x01 and 0x0A have same structure, while type 0x0B is used for long *Term Title* (length > 255).
