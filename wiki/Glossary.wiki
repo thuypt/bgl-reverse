@@ -16,7 +16,7 @@ So following code can parse a Block structure:
 {{{
 # python 3.0 compatible
 def parseBlock(data,x):
-"""return a tuple (blockdata,tail)"""
+   """return a tuple (blockdata,tail)"""
   length=parseInt(data[0:x])
   return (data[x:x+length],data[x+length:])
 }}}
