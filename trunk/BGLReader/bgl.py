@@ -40,11 +40,12 @@ class BGL(gzip.GzipFile):
         if len(hdr)>0:
             hdr=hdr[0]
         else:
+            # eof
             return None
         
         high_nibble=hdr>>4
         rec_type=hdr&0x0F
-    
+        
         if high_nibble>=4:
             rec_len=high_nibble-4
         else:
@@ -52,15 +53,15 @@ class BGL(gzip.GzipFile):
         return (rec_type,self.read(rec_len))
     
     def parseAsResource(self):
-        resdata=parseBlock(self.current,1)
+        resdata=parseRecordBlock(self.current,1)
         return gls.Resource(resdata[0],resdata[1])
 
     def parseAsTerm(self):
         data=self.current[1]
-        (title,data)=parseBlock(data,gls.FORMATSPEC[self.current[0]][0])
-        (termbody,data)=parseBlock(data,gls.FORMATSPEC[self.current[0]][1])
+        (title,data)=parseRecordBlock(data,gls.RECORDFORMATSPEC[self.current[0]][0])
+        (termbody,data)=parseRecordBlock(data,gls.RECORDFORMATSPEC[self.current[0]][1])
         if len(data)>0:
-            termtail=parseBlock(data,1)[0]
+            termtail=parseRecordBlock(data,1)[0]
         else:
             termtail=b''
         title=title.decode(gls.CHARSET[self.property[0x1A]])
@@ -75,10 +76,10 @@ class BGL(gzip.GzipFile):
             parseTermProperty(termprop,gls.CHARSET[self.property[0x1A]]),termtail)       
 
 
-def parseBlock(data,n):
-    "parse a Block: n bytes of length indicator and data next, returns (parsed, unparsed)"
-    blk_len=parseInt(data[0:n])
-    return (data[n:n+blk_len],data[n+blk_len:])
+def parseRecordBlock(data,x):
+    """return a tuple (blockdata,tail)"""
+    length=parseInt(data[0:x])
+    return (data[x:x+length],data[x+length:])
 
 def parseTermProperty(rawprop,charset):
     """return a dict"""
@@ -89,14 +90,14 @@ def parseTermProperty(rawprop,charset):
             prop[spec&0x0F]=rawprop[1]
             rawprop=rawprop[2:]
         elif spec<0x40:            
-            (prop[spec&0x0F],rawprop)=parseBlock(rawprop[1:],(spec>>4))
+            (prop[spec&0x0F],rawprop)=parseRecordBlock(rawprop[1:],(spec>>4))
         elif (spec&0xF0)==0x40:
             newspec=rawprop[1]
             prop[newspec]=rawprop[2:(spec&0x0F)+1+2]
             rawprop=rawprop[(spec&0x0F)+1+2:]
         elif spec>=0x50:
             newspec=rawprop[1]
-            (prop[newspec],rawprop)=parseBlock(rawprop[2:],(spec>>4)-4)
+            (prop[newspec],rawprop)=parseRecordBlock(rawprop[2:],(spec>>4)-4)
         else:
             raise Exception([rawprop,prop,spec])
     if 0x1b in prop.keys():

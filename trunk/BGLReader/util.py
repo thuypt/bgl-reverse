@@ -29,6 +29,7 @@ def replaceCharsetTag(oldstr):
     return newstr
 
 def decode(data,charset,default='latin'):
+    """decode data to string with charset, and try default when errors occur"""
     ret=''
     while len(data)>0:
         try:

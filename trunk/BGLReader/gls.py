@@ -9,7 +9,7 @@ RC_GLSTERMB=0xB
 # resource
 RC_GLSRES=2
 
-FORMATSPEC={
+RECORDFORMATSPEC={
     RC_GLSTERM1:[1,2],
     RC_GLSTERMA:[1,2],
     RC_GLSTERMB:[2,2]
@@ -195,8 +195,8 @@ CHARSET = {
     }
 
 TERM_PROP_NAME={
-    0x18: "Display Name",
-    
+    0x08: "Display Name",
+    0x1b: "Transcription"
     }
     
 class GlsTerm:
@@ -205,5 +205,11 @@ class GlsTerm:
         self.definition=definition
         self.property=prop
         self.tail=tail
+
+class GlsResource:
+    def __init__(self,name,data):
+        self.name=name
+        self.data=data
+
 
 
