@@ -7,7 +7,7 @@
 
 == RecordBlock ==
 
-RecordBlock consists of a leading big-endian unsigned integer N and following N bytes of data.
+RecordBlock consists of a leading big-endian unsigned integer N and following N bytes of data and is used in construction of a Record
 
 RecordBlock(x) indicates a Block structure with the length value N consisting of x bytes.
 
@@ -20,4 +20,4 @@ def parseRecordBlock(data,x):
   length=parseInt(data[0:x])
   return (data[x:x+length],data[x+length:])
 }}}
-== == 
+== PropertyBlock == 
