@@ -1,6 +1,6 @@
 #summary RC_BGLTERM records structure
 #sidebar TOC
- * [Articles HOWTO articles]
+ * [HTMLElements #Introduction articles]
     * [ArticlesXSS Web security]
     * [ArticlesDom DOM manipulation]
     * [ArticlesStyle CSS and style]
