@@ -12,6 +12,6 @@ A Term record in BGLR file has a record type of either 0x01, 0x0A or 0x0B. Type 
 = Details =
 == Term Record Structure Overview ==
 
-A Term Record consists of three [Article ]s
+A Term Record consists of three [BasicDataStructure#Block Block]s
 
 == Term Structure for type 0x01 and 0x0A ==
