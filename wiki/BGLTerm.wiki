@@ -1,5 +1,5 @@
 #summary RC_BGLTERM records structure
-<a href="TermStructureOverview">Term Structure Overview</a>
+<a href="#TermStructureOverview">Term Structure Overview</a>
 
 = Introduction =
 
