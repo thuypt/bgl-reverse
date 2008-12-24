@@ -221,6 +221,9 @@ class GlsContentParser(HTMLParser):
         HTMLParser.reset(self)
         self.parts=[]
         self.tags=[]
+    
+    def handle_entityref(self,name):
+        self.parts.append('&'+name+';')
 
     def handle_charref(self,name):
         self.parts.append(chr(int(name)))
