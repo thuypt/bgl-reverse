@@ -1,16 +1,4 @@
 """format specification for BGL file"""
-from html.parser import HTMLParser
-
-# glossary parameter, may contain format identification information, at the beginning of a BGR
-RC_GLSPARAM=0
-# glossary property
-RC_GLSPROP=3
-# term
-RC_GLSTERM1=0x1
-RC_GLSTERMA=0xA
-RC_GLSTERMB=0xB
-# resource
-RC_GLSRES=2
 
 LEXICAL_CLASS = {
     0x30:'n.',
@@ -155,24 +143,7 @@ LANGUAGE = (
     "Armenian"
     )
 
-GLS_PROP_NAME={
-    0x01:"Title",
-    0x02:"Author Name",
-    0x03:"Author Email",
-    0x04:"Copyright",
-    0x07:"Source Language",
-    0x08:"Target Language",
-    0x09:"Description",
-    0x0B:"Icon",
-    0x0C:"Entry Count",
-    0x1A:"Source Charset",
-    0x1B:"Target Charset",
-    0x27:"Word Class Name", # localized word class name
-    0x33:"Creation Date",
-    0x1C:"Last Updated",
-    0x3B:"Morphological Derivation Type", # localized names of word variation type
-    0x41:"Glossary Manual"
-    }
+
 
 CHARSET = {
     0x41: "ISO-8859-1", #Default
@@ -191,128 +162,47 @@ CHARSET = {
     0x4E: "CP874"       #Thai
     }
 
-TERM_PROP_NAME={
-    0x08: "Display Name",
-    0x1b: "Transcription",
+
+TERM_PROPERTY={
     0x02: "Lexcial Class",
-    
+    0x06: "UNKNOWN",
+    0x08: "Title",
+    0x18: "Derivation",
+    0x1b: "Transcription"
+}
+
+PROPERTY_NAME={
+    0x01:"Title",
+    0x02:"AuthorName",
+    0x03:"AuthorEmail",
+    0x04:"Copyright",
+    0x07:"SourceLanguage",0x08:"TargetLanguage",
+    0x09:"Description",
+    0x0B:"Icon",
+    0x0C:"TermCount",
+    0x1A:"SourceCharset",0x1B:"TargetCharset",
+    0x27:"Word Class Name", # localized word class name
+    0x33:"CreationDate",0x1C:"LastUpdated",
+    0x3B:"MorphologicalDerivationType", # localized names of word variation type
+    0x3C:"UNKNOWN",
+    0x41:"GlossaryManual"
     }
-    
-class GlsTerm:
-    def __init__(self,title,definition,prop,tail):
-        self.title=title
-        self.definition=definition
-        self.property=prop
-        self.tail=tail
 
-class GlsResource:
-    def __init__(self,name,data):
-        self.name=name
-        self.data=data
+PARAMETER_NAME={
+    0x1A:"Source Charset",
+    0x1B:"Target Charset"
+    }
 
-class GlsContentParser(HTMLParser):
-    
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self.parts=[]
-        self.tags=[]
-
-    def reset(self):
-        HTMLParser.reset(self)
-        self.parts=[]
-        self.tags=[]
-    
-    def handle_entityref(self,name):
-        self.parts.append('&'+name+';')
-
-    def handle_charref(self,name):
-        self.parts.append(chr(int(name)))
-    
-    def handle_starttag(self,tag,attrs):
-        #print("start: "+tag)
-        attrs=dict(attrs)
-        if tag=="font":
-            color=attrs.get("color")
-            if color!=None:
-                self.parts.append("<font color='"+color+"'>")
-                self.tags.append("font")
-            else:
-                self.tags.append(None)
-        elif tag=="a":
-            self.parts.append("<a href='")
-            href=attrs.get('href')
-            self.parts.append("entry://")
-            self.parts.append(href.split("://")[1])
-            self.parts.append("'>")
-            self.tags.append('a')
-        elif tag=="br":
-            self.parts.append("<br/>")
-        elif tag=="img":
-            self.parts.append("<img")
-            self.parts.append(" src='/")
-            self.parts.append(attrs.pop("src"))
-            self.parts.append("'")
-            #print(attrs)
-            for k in attrs:
-                self.parts.append(" "+k+"='"+attrs[k]+"'")
-            self.parts.append('/>')
-        elif tag=="charset":
-            self.tags.append("charset")
-        else:
-            self.parts.append("<"+tag+">")
-            self.tags.append(tag)
-
-    def handle_startendtag(self,tag,attrs):
-        #print("start end: "+tag)
-        self.parts.append("<")
-        self.parts.append(tag)
-        for k in attrs:
-            self.parts.append(" "+k+"='"+v+"'")
-        self.parts.append("/>")
-    
-    def handle_endtag(self,tag):
-        #print("end: "+tag)
-        if len(self.tags)==0:
-            return
-        if self.tags[-1]==None and tag=='font': # eliminate font tag with only face attribute
-            self.tags.pop()
-            return
-        if self.tags[-1]!=tag: # if tag is invalid, ignore it
-            return
-        if self.tags[-1]=='charset':
-            self.tags.pop()
-            return
-        self.tags.pop()
-        self.parts.append('</'+tag+'>')
-
-    def handle_data(self,data):
-        if len(self.tags)==0:
-            self.parts.append(data)
-            return
-        lasttag=self.tags[-1];
-        if lasttag=="charset":
-            self.parts.append(chr(int(data[0:4],16)))
-        else:
-            self.parts.append(data)
-    
-
-class Glossary(dict):
-    def __init__(self):
-        dict.__init__(self)
-    
-    def put(self,k,parts):
-        if k[-1]!='$':
-            title=k
-            num=0
-        else:
-            (title,*num)=k.rsplit('$',2)
-            try:
-                num=int(num[0])
-            except:
-                title=k
-                num=0
-        if self.get(title)==None:
-            self[title]={num:parts}
-        else:
-            self[title][num]=parts
-
+# glossary parameter, may contain format identification information
+# always at the beginning of a BGLFile
+PARAMETER=0
+# glossary property
+PROPERTY=3
+# term
+TERM_1=0x1
+TERM_A=0xA
+TERM_B=0xB
+# delimiter
+DELIMITER=6
+# resource
+RESOURCE=2
