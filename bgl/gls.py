@@ -1,5 +1,22 @@
 """format specification for BGL file"""
 
+# initial parameter
+PARAMETER=0
+# glossary property
+PROPERTY=3
+
+# term
+TERM_1=0x1
+TERM_A=0xA
+TERM_B=0xB
+
+# delimiter
+DELIMITER=6
+
+# resource
+RESOURCE=2
+
+
 LEXICAL_CLASS = {
     0x30:'n.',
     0x31:'adj.',
@@ -143,8 +160,6 @@ LANGUAGE = (
     "Armenian"
     )
 
-
-
 CHARSET = {
     0x41: "ISO-8859-1", #Default
     0x42: "ISO-8859-1", #Latin
@@ -162,14 +177,32 @@ CHARSET = {
     0x4E: "CP874"       #Thai
     }
 
+TP_LEX_CLASS=0x02
+
+# display name, but not index name
+TP_TITLE=0x08
+
+# 
+TP_PHON_TRAN=0x1b
+
 
 TERM_PROPERTY={
     0x02: "Lexcial Class",
     0x06: "UNKNOWN",
     0x08: "Title",
     0x18: "Derivation",
-    0x1b: "Transcription"
+    0x1b: "Phonetic Transcription"
 }
+
+P_TITLE=0x01
+P_AUTHOR_NAME=0x02
+P_AUTHOR_EMAIL=0x03
+P_DESCRIPTION=0x09
+P_S_CHARSET=0x1A
+P_T_CHARSET=0x1B
+P_MANUAL=0x41
+P_ICON=0x0B
+
 
 PROPERTY_NAME={
     0x01:"Title",
@@ -181,7 +214,7 @@ PROPERTY_NAME={
     0x0B:"Icon",
     0x0C:"TermCount",
     0x1A:"SourceCharset",0x1B:"TargetCharset",
-    0x27:"Word Class Name", # localized word class name
+    0x27:"Lexical Class Name", # localized lexical class name
     0x33:"CreationDate",0x1C:"LastUpdated",
     0x3B:"MorphologicalDerivationType", # localized names of word variation type
     0x3C:"UNKNOWN",
@@ -193,16 +226,4 @@ PARAMETER_NAME={
     0x1B:"Target Charset"
     }
 
-# glossary parameter, may contain format identification information
-# always at the beginning of a BGLFile
-PARAMETER=0
-# glossary property
-PROPERTY=3
-# term
-TERM_1=0x1
-TERM_A=0xA
-TERM_B=0xB
-# delimiter
-DELIMITER=6
-# resource
-RESOURCE=2
+

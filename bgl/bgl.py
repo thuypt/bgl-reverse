@@ -1,8 +1,11 @@
+"""实现完整的BGL格式解析，其中部分数据意义不明"""
+
 import io
 import gzip
 
 import util
 import gls
+
 
 from html.parser import HTMLParser
 
@@ -19,6 +22,9 @@ def unpack_parameter(data:memoryview) -> (int,bytes):
 
 def unpack_term_property(data:bytes) -> dict:
     """return dict(prop_id -> prop_value)"""
+    # TPBLOCK FORMAT:
+    # 1 Byte spec，如果高四位小于4，低四位为prop_id；否则 next 1 Byte为prop_id，数据长度为spec-0x3f，如果长度>=10，则之后为block(1)
+    #
     prop={}
     while len(data)>1:
         spec=data[0]
@@ -28,15 +34,15 @@ def unpack_term_property(data:bytes) -> dict:
                 prop_value=data[1]
                 data=data[2:]
             else:
-                (prop_value,data)=unpack_block(data,1)
+                (prop_value,data)=unpack_block(data[1:],1)
         else:
             prop_id=data[1] # next byte as prop id
             v_len=spec-0x3f
             if v_len>0x10:
-                (prop_value,data)=unpack_block(data[1:],1)
+                (prop_value,data)=unpack_block(data[2:],1)
             else:
-                prop_value=data[1:1+v_len]
-                data=data[1+v_len:]
+                prop_value=data[2:2+v_len]
+                data=data[2+v_len:]
         prop[prop_id]=prop_value
     return prop
 
@@ -128,10 +134,16 @@ def parse_property(data:dict)->dict:
     prop[0x1a]=gls.CHARSET[util.unpack_ui(bytes(data[0x1a]))]
     prop[0x1b]=gls.CHARSET[util.unpack_ui(bytes(data[0x1b]))]
 
-    for prop_id in [0x01,0x02,0x03,0x04,0x05]:
+    for prop_id in [
+        gls.P_TITLE,
+        gls.P_AUTHOR_NAME,
+        gls.P_AUTHOR_EMAIL
+        ]:
         prop[prop_id]=bytes(data[prop_id]).decode('latin1')
-
-    for prop_id in [0x0B,0x41]:
+    
+    for prop_id in [
+            gls.P_ICON,
+            gls.P_MANUAL]:
         prop[prop_id]=data[prop_id]
     
     return prop
@@ -155,7 +167,7 @@ class GLSHTMLContentFilter(HTMLParser):
         self.parts.append('&'+name+';')
 
     def handle_charref(self,name):
-        self.parts.append(chr(int(name)))
+        self.parts.append(str(util.parse_charref(name)))
     
     def handle_starttag(self,tag,attrs):
         attrs=dict(attrs)
@@ -163,46 +175,47 @@ class GLSHTMLContentFilter(HTMLParser):
             color=attrs.get("color")
             if color!=None:
                 self.parts.append("<font color='"+color+"'>")
-                self.tags.append("font")
+                self.tags.append(tag)
             else:
                 # color tag is useless
                 # by pushing None, the close tag will be ignored
                 self.tags.append(None)
         elif tag=="a":
-            self.parts.append("<a href='"+self.transform_a_href(attrs.get('href'))+"'>")
-            self.tags.append('a')
+            attrs["href"]=self.transform_a_href(attrs["href"])
+            util.append_start_tag(self.parts,tag,attrs)
+            self.tags.append(tag)
         elif tag=="br":
             self.parts.append("<br/>")
         elif tag=="img":
-            self.parts.append("<img src='"+self.transform_img_src(attrs.pop("src")))
-            for k in attrs:
-                self.parts.append("' "+k+"='"+attrs[k])
-            self.parts.append("'/>")
+            attrs["src"]=self.transform_img_src(attrs["src"])
+            util.append_start_tag(self.parts,tag,attrs)
+            self.tags.append(tag)
         elif tag=="charset":
             self.tags.append("charset")
         else:
             # default action
-            self.parts.append(self.get_starttag_text())
+            util.append_start_tag(self.parts,tag,attrs)
             self.tags.append(tag)
         return
 
     def handle_startendtag(self,tag,attrs):
-        self.parts.append(self.get_starttag_text())
+        util.append_startend_tag(self.parts,tag,attrs)
         return
     
     def handle_endtag(self,tag):
         if len(self.tags)==0:
             return
-        if self.tags[-1]==None and tag=='font': # eliminate font tag with only face attribute
+        elif self.tags[-1]==None and tag=='font': # eliminate font tag with only face attribute
+            self.tags.pop()
+        elif self.tags[-1]!=tag: # if tag is invalid, ignore it
+            return
+        elif self.tags[-1]=='charset':
             self.tags.pop()
             return
-        if self.tags[-1]!=tag: # if tag is invalid, ignore it
-            return
-        if self.tags[-1]=='charset':
+        else:
             self.tags.pop()
-            return
-        self.tags.pop()
-        self.parts.append('</'+tag+'>')
+            util.append_end_tag(self.parts,tag)
+        return
 
     def handle_data(self,data):
         if len(self.tags)==0:
@@ -216,97 +229,89 @@ class GLSHTMLContentFilter(HTMLParser):
         return
 
 class BGLParser:
-    def __init__(self,reader:BGLReader):
-        self.reader=reader
-        reader.reset()
-        self.raw_parameters={}
-        self.raw_properties={}
+    def __init__(self):
+        return
 
+    def _read_properties(self,reader:BGLReader):
+        parameters_r={}
+        properties_r={}
+        
         while True:
             rec=reader.next_rec()
             if rec[0]==gls.DELIMITER:
+                
                 break
             elif rec[0]==gls.PARAMETER:
                 (k,v)=unpack_parameter(rec[1])
-                self.raw_parameters[k]=v
+                parameters_r[k]=v
             elif rec[0]==gls.PROPERTY:
                 (k,v)=unpack_property(rec[1])
-                self.raw_properties[k]=v
-        self._parse_properties()
-        self.handle_properties(self.properties)
+                properties_r[k]=v
+        
+        self.properties={
+            gls.P_S_CHARSET:   gls.CHARSET[ bytes(properties_r[gls.P_S_CHARSET])[0] ],
+            gls.P_T_CHARSET:   gls.CHARSET[ bytes(properties_r[gls.P_T_CHARSET])[0] ],
+            gls.P_TITLE:       bytes(properties_r[gls.P_TITLE]).decode('latin1'),
+            gls.P_DESCRIPTION: bytes(properties_r[gls.P_DESCRIPTION]).decode('latin1')
+        }
+        self.handle_properties()
         return
 
-    def _parse_properties(self):
-        self.properties={
-            'source_charset':gls.CHARSET[bytes(self.raw_properties[0x1A])[0]],
-            'target_charset':gls.CHARSET[bytes(self.raw_properties[0x1B])[0]],
-            'title':bytes(self.raw_properties[0x01]).decode('latin1'),
-            'description':bytes(self.raw_properties[0x09]).decode('latin1')
-        }
+    def _parse_term_properties(self,prop:dict) -> dict:
         
-        return
+        return {}
     
-    def execute(self):
-        html=GLSHTMLContentFilter(self.transform_a_href,self.transform_img_src)
-        charset_s=self.properties['source_charset']
-        charset_t=self.properties['target_charset']
+    def parse(self,reader:BGLReader,reset:bool=True):
+        if reset:
+            reader.reset()
+        self.reader=reader
         
-        while not self.reader.eof():
-            rec=self.reader.next_rec()
-            html.reset()
-            if rec[0] == gls.TERM_A:
+        self._read_properties(reader)
+        
+        charset_s=self.properties[gls.P_S_CHARSET]
+        charset_t=self.properties[gls.P_T_CHARSET]
+        
+        while not reader.eof():
+            rec=reader.next_rec()
+            
+            if rec[0] == gls.TERM_A or rec[0] == gls.TERM_1:
                 (title_r,definition_r,alternatives_r,properties_r)=unpack_term(rec[1])
                 title=util.decode(bytes(title_r),charset_s)
+                
+                definition=util.decode(bytes(alt), charset_s)
                 
                 alternatives=[]
                 for alt in alternatives_r:
                     alternatives.append( util.decode(bytes(alt), charset_s) )
                 definition=util.decode(bytes(definition_r),charset_t)
-                try:
-                    html.feed(definition)
-                    html.close()
-                except:
-                    self.handle_error(title,definition,alternatives,properties_r)
-                    continue
                 
-                self.handle_term(
-                    title,
-                    html.parts,
-                    alternatives,
-                    properties_r)
+                properties=self._parse_term_properties(properties_r)
+                
+                self.handle_term(title, definition, alternatives, properties)
+                
             elif rec[0] == gls.RESOURCE:
                 (name_r,data)=unpack_res(rec[1])
-                self.handle_res(
-                    bytes(name_r).decode('latin1'),
-                    data)
+                self.handle_res( bytes(name_r).decode('latin1'), bytes(data) )
                 
-        self.handle_exec_end()
+            elif rec[0] ==  gls.TERM_B:
+                raise Exception("TERM_B not implemented")
+        
+        self.reader.close()
+        self.handle_parse_complete()
         return
 
-    def handle_term(self, title:str,def_frag:list,alternatives:list,properties:dict):
+    def handle_term(self, title:str,definition:str,alternatives:list,properties:dict):
         pass
-
+    
     def handle_res(self, name:str,data:bytes):
         pass
     
-    def handle_error(self,title_r:bytes,definition_str:str,alternatives_r:list,properties:dict):
-        pass
-
     def handle_properties(self,properties:dict):
         pass
-
-    def handle_handle_exec_end(self):
-        pass
     
-    def transform_a_href(self,href:str) -> str:
-        pass
-    
-    def transform_img_src(self,href:str) -> str:
+    def handle_parse_complete(self):
         pass
 
-        
 
-
+class BGL2TXT(BGLParser):
     
-
-
