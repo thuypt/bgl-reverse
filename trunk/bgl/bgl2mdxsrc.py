@@ -1,6 +1,7 @@
 from bgl import BGLParser, BGLReader
 import os
 import util
+import gls
 
 class BGL2MDX(BGLParser):
 
@@ -25,21 +26,21 @@ class BGL2MDX(BGLParser):
 
     def handle_properties(self,properties:dict):
         f=open(self.path+".ifo","w",encoding="utf-8")
-        f.writelines(["Title: ",properties['title'],'\n'])
-        f.writelines(["Description: ",properties['description'],'\n'])
+        f.writelines(["Title: ",properties[gls.P_TITLE],'\n'])
+        f.writelines(["Description: ",properties[gls.P_DESCRIPTION],'\n'])
         f.close()
         return
 
     def handle_res(self, name:str,data:bytes):
         res_f=open(self.path+'/'+name,'wb')
         res_f.write(data)
-        res_f.close() 
+        res_f.close()
         return
 
-    def handle_error(self,title,definition,alternatives,properties):
-        self.flog.writelines(['ERROR:',title,'\n',definition,'\n\n\n'])
+    def handle_error(self,err:Exception,title,definition,alternatives,properties):
+        self.flog.writelines(['ERROR:',str(err),"\n",title,'\n',definition,'\n\n\n'])
         return
-
+    
     def transform_a_href(self,href:str) -> str:
         return 'entry://'+href.split('://')[1]
     

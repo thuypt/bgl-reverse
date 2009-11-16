@@ -1,7 +1,7 @@
 """some reusable functions"""
 import re
 
-def unpack_ui(data) -> int:
+def unpack_ui(data:bytes) -> int:
     """bytes to big-endian unsigned int"""
     value=0;
     for byte in data:
@@ -35,3 +35,29 @@ def mem_split(data:memoryview,delimiter:int)->(memoryview,memoryview):
             break
         i=i+1
     return (data[0:i],data[i+1:])
+
+def append_start_tag(parts:list,tag:str,attrs:dict):
+    parts.append("<"+tag)
+    for k in attrs:
+        if attrs[k]!=None:
+            parts.append(" "+k+"='"+attrs[k]+"'")
+    parts.append("'>")
+    return
+
+def append_startend_tag(parts:list,tag:str,attrs:dict):
+    parts.append("<"+tag)
+    for k in attrs:
+        if attrs[k]!=None:
+            parts.append(" "+k+"='"+attrs[k]+"'")
+    parts.append("'/>")
+    return
+
+def append_end_tag(parts:list,tag:str):
+    parts.append("</"+tag+">")
+    return
+
+def parse_charref(data:str) -> int:
+    if data[0]=='x':
+        return int(data[1:],16)
+    else:
+        return int(data)
