@@ -18,10 +18,9 @@ A BGL file has a 4-byte header.
 
 It is compressed by _zlib 1.1.3_.
 
-  * The gzip header of 0x12340001 files starts at 0x47.
-  * The gzip header of 0x12340002 files starts at 0x69.
-
 _Reference_: [http://www.woodmann.com/forum/showthread.php?t=7028 discussion by acidmelt and biblio]
+
+followed by 2-byte unsigned integer, indicating gzip header offset (0x47 or 0x69)
 
 ==After Decompression (BGLR)==
 
