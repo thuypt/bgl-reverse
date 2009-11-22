@@ -1,4 +1,4 @@
-"""实现完整的BGL格式解析，其中部分数据意义不明"""
+﻿"""实现完整的BGL格式解析，其中部分数据意义不明"""
 
 import io
 import gzip
@@ -312,6 +312,3 @@ class BGLParser:
     def handle_parse_complete(self):
         pass
 
-
-class BGL2TXT(BGLParser):
-    
